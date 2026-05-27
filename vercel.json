@@ -1,0 +1,19 @@
+{
+  "crons": [
+    {
+      "path": "/api/research/run-all",
+      "schedule": "0 9 1,15 * *"
+    }
+  ],
+  "functions": {
+    "app/api/research/**": {
+      "maxDuration": 300
+    },
+    "app/api/synthesis/**": {
+      "maxDuration": 300
+    },
+    "app/api/content/draft/**": {
+      "maxDuration": 120
+    }
+  }
+}
