@@ -3,9 +3,10 @@ import { createServerClient } from "@/lib/supabase-server";
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const body = await request.json();
     const supabase = createServerClient();
 
@@ -15,7 +16,7 @@ export async function PATCH(
     const { data, error } = await supabase
       .from("feed_items")
       .update(updates)
-      .eq("id", params.id)
+      .eq("id", id)
       .select()
       .single();
 
