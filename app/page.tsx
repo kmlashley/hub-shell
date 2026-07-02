@@ -2,6 +2,8 @@ import { createServerClient } from "@/lib/supabase-server";
 import Link from "next/link";
 import { fmtRelative } from "@/lib/fmt-date";
 
+export const dynamic = "force-dynamic";
+
 // ─── Data fetching ─────────────────────────────────────────────────────────────
 
 async function getStats() {

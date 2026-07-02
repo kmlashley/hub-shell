@@ -3,6 +3,8 @@ import { getAdvisors } from "@/lib/advisors";
 import { createServerClient } from "@/lib/supabase-server";
 import { fmtRelative } from "@/lib/fmt-date";
 
+export const dynamic = "force-dynamic";
+
 const SUBJECT_TYPE_CONFIG: Record<string, { label: string; cls: string }> = {
   landing_page:      { label: "Landing Page",    cls: "bg-teal-tint text-primary" },
   email:             { label: "Email",            cls: "bg-purple-tint text-purple" },

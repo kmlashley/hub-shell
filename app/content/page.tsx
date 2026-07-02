@@ -2,6 +2,8 @@ import { createServerClient } from "@/lib/supabase-server";
 import { fmtDate } from "@/lib/fmt-date";
 import Link from "next/link";
 
+export const dynamic = "force-dynamic";
+
 const STATUS_COLORS: Record<string, string> = {
   draft: "bg-border text-muted",
   review: "bg-gold/10 text-gold",

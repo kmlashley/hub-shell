@@ -5,6 +5,8 @@ import { getAdvisorPanelStats } from "@/lib/advisors";
 import { createServerClient } from "@/lib/supabase-server";
 import { fmtRelative } from "@/lib/fmt-date";
 
+export const dynamic = "force-dynamic";
+
 // ─── Content pillars — update quarterly ──────────────────────────────────────
 const PILLARS = [
   {

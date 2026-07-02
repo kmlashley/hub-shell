@@ -2,6 +2,8 @@ import { createServerClient } from "@/lib/supabase-server";
 import Link from "next/link";
 import SettingsTabs from "@/components/settings/SettingsTabs";
 
+export const dynamic = "force-dynamic";
+
 // ─── Data ──────────────────────────────────────────────────────────────────────
 
 async function getSettings(): Promise<Record<string, string>> {
