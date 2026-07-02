@@ -87,17 +87,25 @@ export default async function ContentPage() {
             <tbody className="divide-y divide-border">
               {posts.map((post) => (
                 <tr key={post.id} className="hover:bg-light transition-colors">
-                  <td className="px-4 py-3 font-medium text-dark max-w-[280px]">
-                    <p className="truncate">{post.title}</p>
+                  <td className="p-0 font-medium text-dark max-w-[280px]">
+                    <Link href={`/content/${post.id}`} className="block px-4 py-3 truncate">{post.title}</Link>
                   </td>
-                  <td className="px-4 py-3 text-muted text-xs">{post.primary_keyword ?? "—"}</td>
-                  <td className="px-4 py-3">
-                    <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full capitalize ${STATUS_COLORS[post.status] ?? "bg-border text-muted"}`}>
-                      {post.status}
-                    </span>
+                  <td className="p-0 text-muted text-xs">
+                    <Link href={`/content/${post.id}`} className="block px-4 py-3">{post.primary_keyword ?? "—"}</Link>
                   </td>
-                  <td className="px-4 py-3 text-muted text-xs">{post.score ?? "—"}</td>
-                  <td className="px-4 py-3 text-muted text-xs">{fmtDate(post.updated_at)}</td>
+                  <td className="p-0">
+                    <Link href={`/content/${post.id}`} className="block px-4 py-3">
+                      <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full capitalize ${STATUS_COLORS[post.status] ?? "bg-border text-muted"}`}>
+                        {post.status}
+                      </span>
+                    </Link>
+                  </td>
+                  <td className="p-0 text-muted text-xs">
+                    <Link href={`/content/${post.id}`} className="block px-4 py-3">{post.score ?? "—"}</Link>
+                  </td>
+                  <td className="p-0 text-muted text-xs">
+                    <Link href={`/content/${post.id}`} className="block px-4 py-3">{fmtDate(post.updated_at)}</Link>
+                  </td>
                 </tr>
               ))}
             </tbody>

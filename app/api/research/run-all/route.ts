@@ -36,7 +36,7 @@ async function synthesizeAndQueue(supabase: ReturnType<typeof createServerClient
   if (allReports.length === 0) return { synthesized: false, briefsQueued: 0 };
 
   const summary = allReports
-    .map((r) => `### ${r.type}\n${JSON.stringify(r.data).slice(0, 3000)}`)
+    .map((r) => `### ${r.type}\n${JSON.stringify(r.data).slice(0, 20000)}`)
     .join("\n\n");
 
   const res = await anthropic.messages.create({
@@ -47,7 +47,7 @@ async function synthesizeAndQueue(supabase: ReturnType<typeof createServerClient
 ${BUSINESS_CONTEXT}
 ${CONTENT_STRATEGY}
 
-Analyze the research data and produce the top 5 content opportunities, ranked by potential impact. For each, create a writing_brief.
+Each research report above is broken down by audience segment (see "segments" in each report's data). Analyze the research data and produce the top 5 content opportunities, ranked by potential impact. This business serves multiple audience segments — your 5 opportunities MUST include at least 1-2 for EACH segment described in the business context above. Do not let one segment dominate all 5 slots just because its research data happens to be more extensive; if a segment has no strong opportunity in the data, say so in the summary rather than silently omitting it. For each opportunity, create a writing_brief.
 
 Return JSON:
 {
@@ -56,6 +56,7 @@ Return JSON:
     {
       "rank": 1,
       "topic": "string",
+      "audience_segment": "string — which audience segment this targets",
       "score": "High|Medium|Low",
       "platform": "blog|youtube|newsletter|social",
       "rationale": "string — why this opportunity, why now",
@@ -86,6 +87,7 @@ Return ONLY valid JSON.`,
     opportunities?: Array<{
       rank: number;
       topic: string;
+      audience_segment?: string;
       score: string;
       writing_brief: Record<string, unknown>;
     }>;
@@ -126,7 +128,7 @@ Return ONLY valid JSON.`,
       payload: opp.writing_brief,
       status: "ready",
       priority_score: opp.score === "High" ? 90 : opp.score === "Medium" ? 60 : 30,
-      metadata: { source: "research_sweep", triggered_by: "orchestrator" },
+      metadata: { source: "research_sweep", triggered_by: "orchestrator", audience_segment: opp.audience_segment ?? null },
     });
     briefsQueued++;
   }

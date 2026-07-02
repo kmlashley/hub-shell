@@ -99,6 +99,8 @@ export default function ReviewPage() {
   const [acting, setActing] = useState(false);
   const [typeFilter, setTypeFilter] = useState("all");
   const [dateFilter, setDateFilter] = useState<DateFilter>("all");
+  const [drafting, setDrafting] = useState(false);
+  const [draftError, setDraftError] = useState<string | null>(null);
 
   useEffect(() => { loadItems(activeTab); }, [activeTab]);
 
@@ -142,6 +144,28 @@ export default function ReviewPage() {
     setNotes("");
     await loadItems(activeTab);
     setActing(false);
+  }
+
+  async function draftPost() {
+    if (!selected || drafting) return;
+    setDrafting(true);
+    setDraftError(null);
+
+    const res = await fetch("/api/content/draft", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ brief_id: selected.id, brief: selected.payload }),
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      const refresh = await fetch(`/api/review/outputs/${selected.id}`);
+      const refreshData = await refresh.json();
+      if (refreshData.item) setSelected(refreshData.item);
+    } else {
+      setDraftError(data.error ?? "Failed to draft post");
+    }
+    setDrafting(false);
   }
 
   const allTypes = [...new Set(items.map((i) => i.output_type))];
@@ -332,6 +356,39 @@ export default function ReviewPage() {
                   </Link>
                 </div>
               ) : null}
+
+              {/* Draft this post — for approved briefs */}
+              {selected.output_type === "brief" && selected.status === "approved" && (
+                <div className="mb-4 p-3 bg-white border border-border">
+                  <p className="text-[10px] font-semibold tracking-widest uppercase text-muted mb-2">
+                    Content Draft
+                  </p>
+                  {typeof selected.metadata?.drafted_post_id === "string" ? (
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm text-primary">Draft written.</p>
+                      <Link href="/content" className="text-sm text-primary font-medium hover:underline">
+                        View in Content →
+                      </Link>
+                    </div>
+                  ) : (
+                    <>
+                      <p className="text-xs text-muted mb-2">
+                        Send this brief to the Content Draft agent to write the full post.
+                      </p>
+                      {draftError && (
+                        <p className="text-xs text-accent mb-2">{draftError}</p>
+                      )}
+                      <button
+                        onClick={draftPost}
+                        disabled={drafting}
+                        className="w-full py-2 bg-primary text-white text-sm font-medium hover:bg-primary-hover disabled:opacity-40 transition-colors"
+                      >
+                        {drafting ? "Writing draft…" : "Draft this post"}
+                      </button>
+                    </>
+                  )}
+                </div>
+              )}
 
               {/* Review notes for completed items */}
               {selected.human_notes && activeTab !== "pending" ? (
