@@ -171,10 +171,16 @@ async function runSweep(triggeredBy: "vercel_cron" | "manual") {
       try {
         const res = await fetch(`${baseUrl}${agent.endpoint}`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            "x-internal-secret": process.env.CRON_SECRET ?? "",
+          },
           body: JSON.stringify({ triggered_by: triggeredBy }),
         });
-        if (!res.ok) throw new Error(`${res.status}`);
+        if (!res.ok) {
+          const body = await res.text().catch(() => "");
+          throw new Error(`${res.status}: ${body.slice(0, 200)}`);
+        }
         return { agent: agent.name, success: true, duration_ms: Date.now() - t };
       } catch (err) {
         return { agent: agent.name, success: false, duration_ms: Date.now() - t, error: String(err) };

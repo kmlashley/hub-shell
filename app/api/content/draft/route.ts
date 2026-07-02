@@ -95,11 +95,21 @@ After the post, on a new line, add a JSON block wrapped in \`\`\`json fences wit
 
     if (error) throw new Error(error.message);
 
-    // Mark the brief as approved if brief_id provided
+    // Mark the brief as approved and link the resulting draft, if brief_id provided
     if (brief_id) {
+      const { data: existingBrief } = await supabase
+        .from("agent_outputs")
+        .select("metadata")
+        .eq("id", brief_id)
+        .single();
+
       await supabase
         .from("agent_outputs")
-        .update({ status: "approved", updated_at: new Date().toISOString() })
+        .update({
+          status: "approved",
+          metadata: { ...(existingBrief?.metadata as Record<string, unknown> ?? {}), drafted_post_id: (post as { id: string }).id },
+          updated_at: new Date().toISOString(),
+        })
         .eq("id", brief_id);
     }
 

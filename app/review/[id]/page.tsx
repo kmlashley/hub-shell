@@ -149,6 +149,8 @@ export default function ReviewDetailPage() {
   const [routeTo, setRouteTo] = useState("");
   const [acting, setActing] = useState(false);
   const [actionDone, setActionDone] = useState<string | null>(null);
+  const [drafting, setDrafting] = useState(false);
+  const [draftError, setDraftError] = useState<string | null>(null);
 
   useEffect(() => {
     fetch(`/api/review/outputs/${id}`)
@@ -189,6 +191,28 @@ export default function ReviewDetailPage() {
       if (refreshData.item) setItem(refreshData.item);
     }
     setActing(false);
+  }
+
+  async function draftPost() {
+    if (!item || drafting) return;
+    setDrafting(true);
+    setDraftError(null);
+
+    const res = await fetch("/api/content/draft", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ brief_id: item.id, brief: item.payload }),
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      const refresh = await fetch(`/api/review/outputs/${id}`);
+      const refreshData = await refresh.json();
+      if (refreshData.item) setItem(refreshData.item);
+    } else {
+      setDraftError(data.error ?? "Failed to draft post");
+    }
+    setDrafting(false);
   }
 
   if (loading) {
@@ -319,6 +343,39 @@ export default function ReviewDetailPage() {
               )}
             </dl>
           </div>
+
+          {/* Draft this post — for approved briefs */}
+          {item.output_type === "brief" && item.status === "approved" && (
+            <div className="bg-white border border-border p-4">
+              <p className="text-[10px] font-semibold tracking-widest uppercase text-muted mb-3">
+                Content Draft
+              </p>
+              {typeof item.metadata?.drafted_post_id === "string" ? (
+                <div className="flex items-center justify-between">
+                  <p className="text-sm text-primary">Draft written.</p>
+                  <Link href="/content" className="text-sm text-primary font-medium hover:underline">
+                    View in Content →
+                  </Link>
+                </div>
+              ) : (
+                <>
+                  <p className="text-xs text-muted mb-3">
+                    Send this brief to the Content Draft agent to write the full post.
+                  </p>
+                  {draftError && (
+                    <p className="text-xs text-accent mb-2">{draftError}</p>
+                  )}
+                  <button
+                    onClick={draftPost}
+                    disabled={drafting}
+                    className="w-full py-2.5 bg-primary text-white text-sm font-medium hover:bg-primary-hover disabled:opacity-40 transition-colors"
+                  >
+                    {drafting ? "Writing draft…" : "Draft this post"}
+                  </button>
+                </>
+              )}
+            </div>
+          )}
 
           {/* Actions — only for pending items */}
           {isPending && !actionDone && (

@@ -8,46 +8,49 @@
 // 4. Vague context = vague, generic content opportunities
 // ─────────────────────────────────────────────────────────────────────────────
 
-export const YOUR_NAME = "[YOUR NAME]";
-export const YOUR_BUSINESS_NAME = "[YOUR BUSINESS NAME]";
+export const YOUR_NAME = "Michele Lashley";
+export const YOUR_BUSINESS_NAME = "AI Teaching and Learning Architect (michelelashley.com / aiteachingarchitect.com)";
 
 // Who you serve and what you help them do — 1-2 sentences
 export const NICHE_CONTEXT = `
-[FILL IN: Describe your niche precisely]
-Example: "I help freelance designers build financial systems so they stop living paycheck to paycheck."
+I help educators design AI-integrated learning experiences that build student judgment instead of replacing it, and I help organizations build real AI literacy on their teams — not AI dependency.
+One idea runs under both: AI can elevate thinking, but the thinking has to already be there.
 `.trim();
 
 // Who your ideal reader/buyer is — be specific about age, career stage, pain point
 export const AUDIENCE_CONTEXT = `
-[FILL IN: Describe your ideal audience member specifically]
-Example: "Creative freelancers, 28-45, earning $60-120k/year, skilled at their craft but overwhelmed by money management and business systems."
+Two connected audiences in the messy middle of AI adoption — not skeptics, not evangelists. Educators (professors, instructional designers, faculty developers, 40s-50s, mid-to-senior career) redesigning assignments to protect student thinking.
+Corporate and organizational leaders (HR/L&D directors, CLOs, SMB owners) who know AI matters but need a defensible plan, not more hype.
 `.trim();
 
 // What you want content to accomplish
 export const CONTENT_GOALS = `
-[FILL IN: What should content do for your business?]
-Example: "Build trust with email list, warm people up to the $497 Money Intensive offer, grow YouTube channel to 10k subscribers."
+Current sprint priority order:
+1. Grow the combined email list past baseline
+2. Fill Build It Sessions ($150/60 min) with educators via proof-of-concept YouTube builds
+3. Seed agency-world Sam on LinkedIn ahead of a dedicated agency-lane push this fall
+4. Keep the AI Mapping Session ($500) visible to corporate/SMB Sam as a longer-trust-cycle offer
 `.trim();
 
 // Your 5-7 core content topics — what you write, teach, and talk about
 export const CORE_TOPICS = `
-[FILL IN: List your 5-7 core topics, one per line]
-Example:
-- Freelance finances and pricing strategy
-- Tax basics for self-employed creatives
-- Building financial systems and automations
-- Money mindset for freelancers
-- Using AI tools for business systems
+- Designing assignments AI can't shortcut — evidence of thinking, not just finished product
+- Building custom GPTs and classroom AI tools tied to a specific rubric or course
+- The line between AI literacy and AI dependency in student work
+- What AI can't do — starting there before what it can
+- Building organizational AI literacy without productivity-hack hype
+- Judgment and oversight — how teams evaluate AI output, not just use tools
+- What good AI adoption looks like for knowledge-work and communications teams (agencies, L&D)
 `.trim();
 
 // Your main competitors or adjacent creators to track
 // These are used by the competitive research agent
 export const COMPETITORS = `
-[FILL IN: List 3-5 competitors or adjacent creators]
-Example:
-- Creator A (website: creatorA.com, newsletter: substack.com/creatorA)
-- Creator B (YouTube: @creatorb, blog: creatorb.com)
-- Creator C (Instagram: @creatorc)
+- Erika Stanley — AI Queens (aiqueens.substack.com, erikastanley.com)
+- Jason Gulya — The AI Edventure (higherai.substack.com)
+- Lance Eaton — AI + Education = Simplified (aiedusimplified.substack.com)
+- Bryan Alexander — AI, Academia, and the Future (aiandacademia.substack.com)
+- Ross Stevenson — L&D-focused AI voice (LinkedIn)
 `.trim();
 
 

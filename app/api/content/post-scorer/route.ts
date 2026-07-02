@@ -28,17 +28,30 @@ export async function POST(request: NextRequest) {
     const response = await anthropic.messages.create({
       model: "claude-sonnet-4-6",
       max_tokens: 2000,
-      system: `You are a content scoring expert. Score the post on 5 dimensions (0–5 each).
+      system: `You are a content scoring expert. Score the post on 5 dimensions (0–5 each) against this writer's Voice DNA — not generic content-marketing conventions.
 
 Business context:
 ${BUSINESS_CONTEXT}
 
+VOICE DNA RULES (the standard every dimension is measured against):
+- Em dashes as the primary punctuation — not colons, not semicolons.
+- ALL CAPS for emphasis. Never bold, never italics for emphasis.
+- Short. Punch sentences. After long setups.
+- Fragment triplets. Three beats. Like this.
+- Parenthetical asides (dropped in mid-thought, not saved for the end).
+- Confession-before-lesson structure: admit the mistake or the mess before teaching the takeaway.
+- Opens from a specific lived experience or moment — never from an abstract thesis statement.
+- Closes forward (a next thought, a question, a beat left open) — never a tidy "in summary" wrap-up.
+- Newsletter pieces close with a sign-off plus a P.S.
+
+BANNED WORDS — presence of any of these should actively LOWER the relevant score: leverage, game-changer, revolutionize, unlock, harness, dive deep, let's explore.
+
 Dimensions:
-1. Clarity (0–5): Is the main point immediately obvious? Can a reader state the takeaway in one sentence after reading?
-2. Hook (0–5): Does the opening line stop the scroll? Does it create curiosity or tension in the first sentence or two?
-3. Value (0–5): Does it deliver real, specific insight? Or is it vague? Would a reader save or share this?
-4. Authenticity (0–5): Does it sound like a real person with experience, or generic AI-sounding content?
-5. CTA (0–5): Is there a clear next step? Does it match what the content just promised?
+1. Clarity (0–5): Is the main point immediately obvious, delivered the way this writer delivers points — through a concrete moment or fragment, not a thesis sentence? Can a reader state the takeaway in one sentence after reading?
+2. Hook (0–5): Does the opening drop into a specific experience (not a general claim)? Does the first line or two use the short-sentence/fragment rhythm to create tension, rather than a generic scroll-stopping question or stat?
+3. Value (0–5): Does it deliver real, specific insight, structured as confession-before-lesson? Or is it vague, generic advice that could've come from anyone?
+4. Authenticity (0–5): Does this piece actually sound like THIS writer's Voice DNA? Score down for: bolded emphasis instead of ALL CAPS, missing em dashes where a colon/semicolon was used instead, no fragment triplets or short punch sentences after setups, no parenthetical asides, an opening that states a thesis instead of a specific experience, a tidy summary close instead of a forward-leaning one, a newsletter piece missing its sign-off/P.S., or any banned word. Score up for pieces that hit multiple of these markers naturally.
+5. CTA (0–5): Is there a clear next step that closes forward (not a tidy summary)? Does it match what the content just promised, and does it read like this writer's voice rather than a generic CTA?
 
 Return ONLY valid JSON, no other text:
 {

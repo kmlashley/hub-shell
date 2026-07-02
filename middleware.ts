@@ -11,10 +11,16 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Skip auth for the cron-triggered research endpoint (authenticated by CRON_SECRET)
-  // and for static assets.
+  // Skip auth for the research orchestrator and the sub-agents it calls
+  // server-to-server (they carry no browser session cookie). These are
+  // gated instead by the CRON_SECRET shared-secret check inside each route —
+  // see lib/research/internal-auth.ts. Also skip for static assets.
   if (
     pathname.startsWith("/api/research/run-all") ||
+    pathname === "/api/research/keyword" ||
+    pathname === "/api/research/competitive" ||
+    pathname === "/api/research/content-trends" ||
+    pathname === "/api/research/audience" ||
     pathname.startsWith("/_next") ||
     pathname.startsWith("/favicon") ||
     pathname.includes(".")

@@ -1,6 +1,7 @@
 import { createServerClient } from "@/lib/supabase-server";
 import { fmtDate } from "@/lib/fmt-date";
 import Link from "next/link";
+import AddContentForm from "./AddContentForm";
 
 export const dynamic = "force-dynamic";
 
@@ -33,17 +34,20 @@ export default async function ContentPage() {
 
   return (
     <div className="max-w-4xl mx-auto">
-      <div className="mb-6 flex items-start justify-between">
+      <div className="mb-6 flex items-start justify-between relative">
         <div>
           <h1 className="text-2xl font-serif text-dark mb-1">Content</h1>
           <p className="text-sm text-muted">Blog posts in your pipeline.</p>
         </div>
-        <Link
-          href="/content/post-scorer"
-          className="text-sm bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary/90 transition-colors"
-        >
-          Score a draft
-        </Link>
+        <div className="flex items-center gap-3">
+          <AddContentForm />
+          <Link
+            href="/content/post-scorer"
+            className="text-sm bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary/90 transition-colors"
+          >
+            Score a draft
+          </Link>
+        </div>
       </div>
 
       {/* Status tabs summary */}
