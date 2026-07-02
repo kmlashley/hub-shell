@@ -42,7 +42,7 @@ const NAV: NavSection[] = [
         href: "/content",
         children: [
           { name: "Review Queue", href: "/review" },
-          { name: "Blog Posts", href: "/content/posts" },
+          { name: "Blog Posts", href: "/content" },
           { name: "Post Scorer", href: "/content/post-scorer" },
           { name: "Keyword Research", href: "/content/keyword-research" },
           { name: "SEO Research", href: "/content/seo-research" },
