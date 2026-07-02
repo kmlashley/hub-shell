@@ -40,7 +40,7 @@ async function synthesizeAndQueue(supabase: ReturnType<typeof createServerClient
     .join("\n\n");
 
   const res = await anthropic.messages.create({
-    model: "claude-sonnet-4-20250514",
+    model: "claude-sonnet-4-6",
     max_tokens: 8000,
     system: `You are a content intelligence synthesizer. You read all research outputs and generate the top content opportunities with complete writing briefs.
 

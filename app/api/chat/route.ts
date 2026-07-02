@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
   const { messages }: { messages: ChatMessage[] } = await request.json();
 
   const stream = await anthropic.messages.stream({
-    model: "claude-sonnet-4-20250514",
+    model: "claude-sonnet-4-6",
     max_tokens: 2048,
     system: `You are a helpful AI assistant for this business. You have full context of the business below and can help with strategy, content ideas, research questions, offer development, and any other business task.
 

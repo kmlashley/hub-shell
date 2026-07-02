@@ -1,5 +1,5 @@
 export type ReviewStatus = "ready" | "approved" | "rejected" | "redirected" | "published";
-export type OutputType = "brief" | "draft" | "social_post" | "research" | "other";
+export type OutputType = "brief" | "draft" | "social_post" | "research" | "analysis" | "other";
 
 export interface ReviewItem {
   id: string;
@@ -21,4 +21,5 @@ export interface FeedbackPayload {
   id: string;
   action: FeedbackAction;
   notes?: string;
+  route_to?: string;
 }

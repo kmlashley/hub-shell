@@ -1,21 +1,36 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { League_Spartan, Montserrat, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import Sidebar from "@/components/Sidebar";
 import GlobalChatBubble from "@/components/GlobalChatBubble";
 
-const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
+const leagueSpartan = League_Spartan({
+  subsets: ["latin"],
+  variable: "--font-display",
+  display: "swap",
+});
 
-// Update HUB_NAME and description to match your DESIGN.md values
+const montserrat = Montserrat({
+  subsets: ["latin"],
+  variable: "--font-body",
+  display: "swap",
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ["latin"],
+  variable: "--font-mono",
+  display: "swap",
+});
+
 export const metadata: Metadata = {
-  title: "My Hub",
+  title: "Hub Shell",
   description: "Your AI Business OS",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={inter.variable}>
-      <body className="bg-light min-h-screen">
+    <html lang="en" className={`${leagueSpartan.variable} ${montserrat.variable} ${jetbrainsMono.variable}`}>
+      <body className="bg-light min-h-screen" suppressHydrationWarning>
         <div className="flex min-h-screen">
           <Sidebar />
           <main className="flex-1 min-w-0 p-8">

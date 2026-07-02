@@ -14,33 +14,52 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // Primary — buttons, active nav, key accents
-        // Change to your brand's primary color from DESIGN.md
-        primary: "#6366f1",
-
-        // Dark — sidebar, headings, strong text
-        dark: "#1e1b4b",
-
-        // Accent — secondary highlights, badges, success states
-        accent: "#10b981",
-
-        // Gold — warnings, star ratings, attention-drawing elements
-        gold: "#f59e0b",
-
-        // Light — page background, card backgrounds, canvas
-        light: "#f8f9ff",
-
-        // Border — dividers, input outlines, subtle separators
-        border: "#e2e8f0",
-
-        // Muted — secondary text, metadata, timestamps
-        muted: "#64748b",
+        primary: "#0f6b70",      // teal
+        "primary-hover": "#1a8a8f",
+        dark: "#14272a",         // ink
+        "ink-2": "#3a4a4d",
+        "ink-3": "#6b7a7d",
+        accent: "#a3320b",       // rust
+        "accent-hover": "#c44a18",
+        purple: "#4e0f70",
+        "purple-hover": "#6e2090",
+        olive: "#5c700f",
+        gold: "#efa00b",
+        navy: "#1a3a5a",
+        "pin-red": "#d92b2b",
+        light: "#faf7f1",        // cream
+        paper: "#ffffff",
+        border: "#e3dccf",       // line
+        "border-2": "#c9bfac",
+        "teal-tint": "#e5f0f0",
+        "rust-tint": "#f6e4dc",
+        "purple-tint": "#ece2f1",
+        "olive-tint": "#eaedd9",
+        "gold-tint": "#fcecc6",
+        muted: "#6b7a7d",
       },
       fontFamily: {
-        // Heading font — change to your preferred serif or display font
-        serif: ["Playfair Display", "Georgia", "serif"],
-        // Body font — clean sans-serif recommended for readability
-        sans: ["Inter", "system-ui", "sans-serif"],
+        display: ["League Spartan", "system-ui", "sans-serif"],
+        sans: ["Montserrat", "system-ui", "sans-serif"],
+        mono: ["JetBrains Mono", "monospace"],
+      },
+      borderRadius: {
+        sm: "0",
+        md: "0",
+        lg: "0",
+        xl: "0",
+        "2xl": "0",
+        pill: "0",
+      },
+      boxShadow: {
+        1: "0 1px 2px rgba(20, 39, 42, 0.06)",
+        2: "0 4px 14px rgba(20, 39, 42, 0.08)",
+        3: "0 10px 30px rgba(20, 39, 42, 0.10)",
+        press: "inset 0 2px 4px rgba(20, 39, 42, 0.12)",
+      },
+      transitionTimingFunction: {
+        ml: "cubic-bezier(.2, .7, .2, 1)",
+        "ml-out": "cubic-bezier(.16, 1, .3, 1)",
       },
     },
   },

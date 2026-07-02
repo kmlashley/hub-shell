@@ -2,87 +2,111 @@ import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { createServerClient } from "@/lib/supabase-server";
 import { extractJsonFromClaude } from "@/lib/research/api-clients";
-import { BUSINESS_CONTEXT, AUDIENCE_CONTEXT } from "@/lib/research/context";
+import { BUSINESS_CONTEXT } from "@/lib/research/context";
 
 export const maxDuration = 60;
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
-export async function POST(request: NextRequest) {
-  const { post_id, content, title }: { post_id?: string; content: string; title?: string } = await request.json();
+function calcGrade(total: number): "A" | "B" | "C" | "D" | "F" {
+  const pct = (total / 25) * 100;
+  if (pct >= 90) return "A";
+  if (pct >= 80) return "B";
+  if (pct >= 70) return "C";
+  if (pct >= 60) return "D";
+  return "F";
+}
 
-  if (!content) {
+export async function POST(request: NextRequest) {
+  const { content, save }: { content: string; save?: boolean } = await request.json();
+
+  if (!content?.trim()) {
     return NextResponse.json({ error: "content is required" }, { status: 400 });
   }
 
   try {
     const response = await anthropic.messages.create({
-      model: "claude-sonnet-4-20250514",
+      model: "claude-sonnet-4-6",
       max_tokens: 2000,
-      system: `You are a content quality scorer for a content creator.
+      system: `You are a content scoring expert. Score the post on 5 dimensions (0–5 each).
 
+Business context:
 ${BUSINESS_CONTEXT}
 
-Target audience: ${AUDIENCE_CONTEXT}
+Dimensions:
+1. Clarity (0–5): Is the main point immediately obvious? Can a reader state the takeaway in one sentence after reading?
+2. Hook (0–5): Does the opening line stop the scroll? Does it create curiosity or tension in the first sentence or two?
+3. Value (0–5): Does it deliver real, specific insight? Or is it vague? Would a reader save or share this?
+4. Authenticity (0–5): Does it sound like a real person with experience, or generic AI-sounding content?
+5. CTA (0–5): Is there a clear next step? Does it match what the content just promised?
 
-Score this post across 5 dimensions (0-20 each, 100 total):
-
-1. **Voice Match** (0-20): Does it sound like the person described in the business context? Conversational? Personal stories? Or generic and corporate?
-2. **Audience Fit** (0-20): Will the target audience recognize themselves? Does it speak to their real pain?
-3. **Substance** (0-20): Does it provide real value, specific examples, actionable steps? Or is it vague and generic?
-4. **SEO Structure** (0-20): Keyword use, heading hierarchy, scannability, meta description quality.
-5. **Differentiation** (0-20): Does it have a unique angle? Or is it the same article everyone else would write?
-
-Return JSON:
+Return ONLY valid JSON, no other text:
 {
-  "total_score": number,
-  "breakdown": {
-    "voice_match": { "score": number, "feedback": "string" },
-    "audience_fit": { "score": number, "feedback": "string" },
-    "substance": { "score": number, "feedback": "string" },
-    "seo_structure": { "score": number, "feedback": "string" },
-    "differentiation": { "score": number, "feedback": "string" }
+  "dimensions": {
+    "clarity": { "score": number, "note": "one specific observation (1-2 sentences)" },
+    "hook": { "score": number, "note": "one specific observation (1-2 sentences)" },
+    "value": { "score": number, "note": "one specific observation (1-2 sentences)" },
+    "authenticity": { "score": number, "note": "one specific observation (1-2 sentences)" },
+    "cta": { "score": number, "note": "one specific observation (1-2 sentences)" }
   },
-  "top_strength": "string",
-  "top_weakness": "string",
-  "priority_edits": ["string — specific, actionable edit suggestions"],
-  "publish_ready": true | false
-}
-
-Return ONLY valid JSON.`,
-      messages: [
-        {
-          role: "user",
-          content: `Title: ${title ?? "Untitled"}\n\n${content.slice(0, 8000)}`,
-        },
-      ],
+  "fixes": [
+    "Specific, actionable fix #1 — quote the problem text, tell them exactly what to change",
+    "Specific, actionable fix #2",
+    "Specific, actionable fix #3"
+  ],
+  "rewrites": [
+    {
+      "original": "exact excerpt from the post (15–40 words)",
+      "suggested": "your improved version of that same excerpt",
+      "reason": "why this version is stronger (1 sentence)"
+    },
+    {
+      "original": "another excerpt",
+      "suggested": "improved version",
+      "reason": "reason"
+    }
+  ]
+}`,
+      messages: [{ role: "user", content: content.slice(0, 8000) }],
     });
 
     const raw = response.content[0].type === "text" ? response.content[0].text : "";
-    const scoreData = extractJsonFromClaude(raw) as {
-      total_score?: number;
-      publish_ready?: boolean;
+    const data = extractJsonFromClaude(raw) as {
+      dimensions?: Record<string, { score: number; note: string }>;
+      fixes?: string[];
+      rewrites?: Array<{ original: string; suggested: string; reason: string }>;
     } | null;
 
-    if (!scoreData) {
+    if (!data?.dimensions) {
       return NextResponse.json({ error: "Failed to parse score" }, { status: 500 });
     }
 
-    // Update post record if post_id provided
-    if (post_id) {
+    const dims = data.dimensions;
+    const total = Object.values(dims).reduce((sum, d) => sum + (d.score ?? 0), 0);
+    const grade = calcGrade(total);
+
+    const result = {
+      grade,
+      overall_score: total,
+      dimensions: dims,
+      fixes: data.fixes ?? [],
+      rewrites: data.rewrites ?? [],
+    };
+
+    if (save) {
       const supabase = createServerClient();
-      await supabase
-        .from("blog_posts")
-        .update({
-          score: scoreData.total_score,
-          score_breakdown: scoreData,
-          status: scoreData.publish_ready ? "approved" : "review",
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", post_id);
+      await supabase.from("post_scores").insert({
+        content_preview: content.slice(0, 300),
+        overall_score: total,
+        grade,
+        dimensions_json: dims,
+        fixes_json: data.fixes ?? [],
+        rewrites_json: data.rewrites ?? [],
+        created_at: new Date().toISOString(),
+      });
     }
 
-    return NextResponse.json({ success: true, score: scoreData });
+    return NextResponse.json({ success: true, result });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     return NextResponse.json({ success: false, error: message }, { status: 500 });

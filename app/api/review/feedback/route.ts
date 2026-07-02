@@ -11,7 +11,7 @@ const ACTION_STATUS = {
 
 export async function POST(request: NextRequest) {
   const body: FeedbackPayload = await request.json();
-  const { id, action, notes } = body;
+  const { id, action, notes, route_to } = body;
 
   if (!id || !action) {
     return NextResponse.json({ error: "id and action are required" }, { status: 400 });
@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
   const newStatus = ACTION_STATUS[action];
 
   try {
-    await updateReviewStatus(supabase, id, newStatus, notes);
+    await updateReviewStatus(supabase, id, newStatus, notes, route_to);
     return NextResponse.json({ success: true, status: newStatus });
   } catch (err) {
     return NextResponse.json(
