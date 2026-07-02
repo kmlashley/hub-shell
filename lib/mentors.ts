@@ -27,6 +27,22 @@ export async function getMentors(): Promise<Mentor[]> {
   return (data ?? []) as Mentor[];
 }
 
+export async function getMentorBySlug(slug: string): Promise<Mentor | null> {
+  const supabase = createServerClient();
+  const { data } = await supabase
+    .from("mentors")
+    .select("*")
+    .eq("slug", slug)
+    .maybeSingle();
+  return (data ?? null) as Mentor | null;
+}
+
+export const MENTOR_BATCH_LABELS = [
+  "Core Beliefs",
+  "Frameworks & Mechanics",
+  "Failure Modes & Hard Limits",
+];
+
 export function formatMentorDate(isoStr: string | null): string {
   if (!isoStr) return "Never";
   return new Date(isoStr).toLocaleDateString("en-US", {
