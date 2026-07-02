@@ -131,7 +131,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const totalAdded = results.reduce((sum, r) => sum + (r.added ?? 0), 0);
+    const totalAdded = results.reduce((sum, r) => sum + ("added" in r ? (r.added as number) : 0), 0);
     return NextResponse.json({ success: true, results, totalAdded });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
