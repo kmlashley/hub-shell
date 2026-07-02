@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 type NavChild = { name: string; href: string };
 type NavItem = { name: string; href: string; children?: NavChild[] };
@@ -147,6 +147,14 @@ export default function Sidebar() {
   }
 
   const [expanded, setExpanded] = useState<Record<string, boolean>>(defaultExpanded);
+  const [hubName, setHubName] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch("/api/settings")
+      .then((r) => r.json())
+      .then((d) => { if (d.settings?.hub_name) setHubName(d.settings.hub_name); })
+      .catch(() => {});
+  }, []);
 
   const toggle = (href: string, e: React.MouseEvent) => {
     e.preventDefault();
@@ -156,9 +164,8 @@ export default function Sidebar() {
 
   return (
     <aside className="w-[240px] bg-white border-r border-border px-[18px] py-7 flex flex-col sticky top-0 h-screen overflow-y-auto shrink-0">
-      {/* Hub Name — update HUB_NAME in DESIGN.md, then change the text here */}
       <div className="font-serif text-[26px] text-dark mb-9 pl-2.5 tracking-tight leading-none">
-        My <span className="text-primary">Hub</span>
+        {hubName ?? <>My <span className="text-primary">Hub</span></>}
       </div>
 
       <nav className="flex flex-col gap-5 flex-1">
