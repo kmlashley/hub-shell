@@ -1,5 +1,6 @@
 import { createServerClient } from "@/lib/supabase-server";
 import Link from "next/link";
+import { Suspense } from "react";
 import SettingsTabs from "@/components/settings/SettingsTabs";
 
 export const dynamic = "force-dynamic";
@@ -44,10 +45,12 @@ export default async function SettingsPage() {
           <span className="text-dark">Settings</span>
         </p>
         <h1 className="text-2xl font-serif text-dark mb-1">Settings</h1>
-        <p className="text-sm text-muted">Configure your hub — brand, integrations, and agent defaults.</p>
+        <p className="text-sm text-muted">Configure your hub — brand, content pillars, integrations, and agent defaults.</p>
       </div>
 
-      <SettingsTabs initialSettings={settings} envStatus={envStatus} />
+      <Suspense fallback={null}>
+        <SettingsTabs initialSettings={settings} envStatus={envStatus} />
+      </Suspense>
     </div>
   );
 }

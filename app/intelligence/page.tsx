@@ -7,8 +7,8 @@ import { fmtRelative } from "@/lib/fmt-date";
 
 export const dynamic = "force-dynamic";
 
-// ─── Content pillars — update quarterly ──────────────────────────────────────
-const PILLARS = [
+// ─── Content pillars — fallback used until edited in Settings ────────────────
+const DEFAULT_PILLARS = [
   {
     num: "01",
     name: "The Thinking Comes First",
@@ -30,6 +30,30 @@ const PILLARS = [
     desc: "Content that names and normalizes uncertainty — orienting people without pretending the path is clear.",
   },
 ];
+
+type Pillar = { name: string; desc: string };
+
+function withPillarNumbers(pillars: Pillar[]) {
+  return pillars.map((p, i) => ({ ...p, num: String(i + 1).padStart(2, "0") }));
+}
+
+async function getContentPillars(supabase: ReturnType<typeof createServerClient>) {
+  const { data } = await supabase
+    .from("hub_settings")
+    .select("value")
+    .eq("key", "content_pillars")
+    .maybeSingle();
+
+  if (data?.value) {
+    try {
+      const parsed = JSON.parse(data.value);
+      if (Array.isArray(parsed) && parsed.length > 0) return withPillarNumbers(parsed);
+    } catch {
+      // fall through to defaults
+    }
+  }
+  return DEFAULT_PILLARS;
+}
 
 // ─── Update these weekly ──────────────────────────────────────────────────────
 const OPPORTUNITIES = [
@@ -205,7 +229,7 @@ function nextMondayAt8(): string {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 export default async function IntelligencePage() {
   const supabase = createServerClient();
-  const [agentStates, mentors, advisorStats, briefsRes] = await Promise.all([
+  const [agentStates, mentors, advisorStats, briefsRes, pillars] = await Promise.all([
     getAgentStates(AGENTS.map((a) => a.key)),
     getMentors(),
     getAdvisorPanelStats(),
@@ -215,6 +239,7 @@ export default async function IntelligencePage() {
       .eq("status", "ready")
       .order("created_at", { ascending: false })
       .limit(5),
+    getContentPillars(supabase),
   ]);
   const latestBriefs = briefsRes.data ?? [];
 
@@ -333,14 +358,22 @@ export default async function IntelligencePage() {
       <div className="border border-border bg-gradient-to-br from-white to-light p-6 mb-10">
 
         {/* Pillars */}
-        <p className="text-[10px] font-semibold tracking-widest uppercase text-accent mb-2">
-          Content pillars this quarter
-        </p>
+        <div className="flex items-center justify-between mb-2">
+          <p className="text-[10px] font-semibold tracking-widest uppercase text-accent">
+            Content pillars this quarter
+          </p>
+          <Link href="/settings?tab=content-pillars" className="text-xs text-primary hover:underline">
+            Edit pillars →
+          </Link>
+        </div>
         <h2 className="text-xl font-serif text-dark mb-5">
-          Four themes. Everything maps to one of these.
+          {pillars.length} theme{pillars.length !== 1 ? "s" : ""}. Everything maps to one of these.
         </h2>
-        <div className="grid grid-cols-4 gap-3 mb-8">
-          {PILLARS.map((p) => (
+        <div
+          className="grid gap-3 mb-8"
+          style={{ gridTemplateColumns: `repeat(${Math.min(pillars.length, 4)}, minmax(0, 1fr))` }}
+        >
+          {pillars.map((p) => (
             <div key={p.num} className="bg-white border border-border p-4">
               <p className="font-serif text-2xl text-accent/30 mb-2 leading-none">{p.num}</p>
               <p className="font-serif text-sm text-dark mb-2 leading-snug">{p.name}</p>

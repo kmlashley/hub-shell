@@ -1,8 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import { useSearchParams } from "next/navigation";
 
-type Tab = "general" | "integrations" | "agent-defaults";
+type Tab = "general" | "content-pillars" | "integrations" | "agent-defaults";
+type Pillar = { name: string; desc: string };
 
 interface Props {
   initialSettings: Record<string, string>;
@@ -11,9 +13,42 @@ interface Props {
 
 const TABS: { id: Tab; label: string }[] = [
   { id: "general", label: "General" },
+  { id: "content-pillars", label: "Content Pillars" },
   { id: "integrations", label: "Integrations" },
   { id: "agent-defaults", label: "Agent Defaults" },
 ];
+
+const DEFAULT_PILLARS: Pillar[] = [
+  {
+    name: "The Thinking Comes First",
+    desc: "The case for human judgment before AI involvement — in assignments, workflows, hiring, and decisions.",
+  },
+  {
+    name: "What AI Can't Do",
+    desc: "Concrete, non-alarmist exploration of AI's actual limits — where human capability is irreplaceable.",
+  },
+  {
+    name: "Build Something",
+    desc: "Practical, demonstration-forward content showing what it actually looks like to make something with AI.",
+  },
+  {
+    name: "The Map, Not the Answer",
+    desc: "Content that names and normalizes uncertainty — orienting people without pretending the path is clear.",
+  },
+];
+
+function parsePillars(raw: string | undefined): Pillar[] {
+  if (!raw) return DEFAULT_PILLARS;
+  try {
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed) && parsed.length > 0) {
+      return parsed.map((p) => ({ name: p.name ?? "", desc: p.desc ?? "" }));
+    }
+  } catch {
+    // fall through to defaults
+  }
+  return DEFAULT_PILLARS;
+}
 
 const INTEGRATIONS = [
   {
@@ -58,8 +93,13 @@ const TIMEZONES = [
 ];
 
 export default function SettingsTabs({ initialSettings, envStatus }: Props) {
-  const [activeTab, setActiveTab] = useState<Tab>("general");
+  const searchParams = useSearchParams();
+  const requestedTab = searchParams.get("tab");
+  const initialTab: Tab = TABS.some((t) => t.id === requestedTab) ? (requestedTab as Tab) : "general";
+
+  const [activeTab, setActiveTab] = useState<Tab>(initialTab);
   const [settings, setSettings] = useState(initialSettings);
+  const [pillars, setPillars] = useState<Pillar[]>(() => parsePillars(initialSettings["content_pillars"]));
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -70,15 +110,34 @@ export default function SettingsTabs({ initialSettings, envStatus }: Props) {
     setSaveError(null);
   }
 
+  function updatePillar(index: number, field: keyof Pillar, value: string) {
+    setPillars((prev) => prev.map((p, i) => (i === index ? { ...p, [field]: value } : p)));
+    setSaved(false);
+    setSaveError(null);
+  }
+
+  function addPillar() {
+    setPillars((prev) => [...prev, { name: "", desc: "" }]);
+    setSaved(false);
+    setSaveError(null);
+  }
+
+  function removePillar(index: number) {
+    setPillars((prev) => prev.filter((_, i) => i !== index));
+    setSaved(false);
+    setSaveError(null);
+  }
+
   async function save() {
     setSaving(true);
     setSaved(false);
     setSaveError(null);
     try {
+      const body = { ...settings, content_pillars: JSON.stringify(pillars) };
       const res = await fetch("/api/settings", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(settings),
+        body: JSON.stringify(body),
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
@@ -189,6 +248,63 @@ export default function SettingsTabs({ initialSettings, envStatus }: Props) {
                 </select>
               </div>
             </div>
+          </div>
+
+          <SaveRow saving={saving} saved={saved} error={saveError} onSave={save} />
+        </div>
+      )}
+
+      {/* Content Pillars */}
+      {activeTab === "content-pillars" && (
+        <div className="flex flex-col gap-6">
+          <div className="bg-white border border-border p-6">
+            <p className="text-[10px] font-semibold tracking-widest uppercase text-accent mb-1">
+              Content pillars
+            </p>
+            <p className="text-xs text-muted mb-6">
+              The themes shown on the Intelligence page. Update these each quarter — everything
+              your content agents produce maps back to one of these.
+            </p>
+
+            <div className="flex flex-col gap-4">
+              {pillars.map((pillar, i) => (
+                <div key={i} className="border border-border p-4 flex gap-3">
+                  <p className="font-serif text-2xl text-accent/30 leading-none shrink-0 pt-1">
+                    {String(i + 1).padStart(2, "0")}
+                  </p>
+                  <div className="flex-1 flex flex-col gap-2">
+                    <input
+                      type="text"
+                      value={pillar.name}
+                      onChange={(e) => updatePillar(i, "name", e.target.value)}
+                      placeholder="Pillar name"
+                      className="w-full border border-border bg-light px-3 py-2 text-sm font-medium text-dark focus:outline-none focus:border-primary transition-colors"
+                    />
+                    <textarea
+                      value={pillar.desc}
+                      onChange={(e) => updatePillar(i, "desc", e.target.value)}
+                      placeholder="What this pillar covers"
+                      rows={2}
+                      className="w-full border border-border bg-light px-3 py-2 text-xs text-dark focus:outline-none focus:border-primary transition-colors resize-none"
+                    />
+                  </div>
+                  <button
+                    onClick={() => removePillar(i)}
+                    className="text-muted hover:text-accent transition-colors text-xs shrink-0 h-fit"
+                    aria-label="Remove pillar"
+                  >
+                    Remove
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            <button
+              onClick={addPillar}
+              className="mt-4 text-xs font-medium text-primary hover:underline"
+            >
+              + Add pillar
+            </button>
           </div>
 
           <SaveRow saving={saving} saved={saved} error={saveError} onSave={save} />
