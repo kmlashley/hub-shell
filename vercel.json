@@ -14,6 +14,9 @@
     },
     "app/api/content/draft/**": {
       "maxDuration": 120
+    },
+    "app/api/content/post-scorer/**": {
+      "maxDuration": 120
     }
   }
 }

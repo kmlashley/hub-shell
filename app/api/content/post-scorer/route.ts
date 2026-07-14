@@ -5,7 +5,7 @@ import { extractJsonFromClaude } from "@/lib/research/api-clients";
 import { BUSINESS_CONTEXT } from "@/lib/research/context";
 import { loadVoiceDna } from "@/lib/voice-dna";
 
-export const maxDuration = 60;
+export const maxDuration = 120;
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
@@ -103,6 +103,22 @@ export async function POST(request: NextRequest) {
 
     const laneIsGiven = requestedLane === "educator" || requestedLane === "business" || requestedLane === "agency";
 
+    // Only ship the rule block(s) that can actually apply. When the lane is
+    // given, that's a big prompt-size (and latency) saving over sending all
+    // three every time — agency includes business's block per spec ("Agency
+    // lane: everything in the business lane PLUS Section 8b").
+    let ruleBlocks: string;
+    if (requestedLane === "educator") {
+      ruleBlocks = EDUCATOR_GATES_AND_CHECKS;
+    } else if (requestedLane === "business") {
+      ruleBlocks = BUSINESS_LANE_INSTRUCTIONS;
+    } else if (requestedLane === "agency") {
+      ruleBlocks = `${BUSINESS_LANE_INSTRUCTIONS}\n\n${AGENCY_LANE_INSTRUCTIONS}`;
+    } else {
+      // No lane given — the model needs all three to infer and then apply one.
+      ruleBlocks = `${EDUCATOR_GATES_AND_CHECKS}\n\n${BUSINESS_LANE_INSTRUCTIONS}\n\n${AGENCY_LANE_INSTRUCTIONS}`;
+    }
+
     const system = `You are Michele Lashley's Post Scorer — a strict editor grading a draft against HER specific, documented voice rules, not generic content-marketing conventions.
 
 Business context:
@@ -121,13 +137,9 @@ ${
     : `No lane was given. Infer it from the content — "educator" (teaching an idea or build to a general audience), "business" (Sam-facing: SMB owners, HR/L&D, generalist leaders), or "agency" (Dana-facing: VP-level agency/comms leaders, industry-specific). Use ONLY that inferred lane's rule block below. Set "lane" to the lane you inferred, and set lane_note to a one-sentence justification that explicitly states this was an assumption.`
 }
 
-All three rule blocks are below for reference — apply only the one matching the lane (given or inferred), ignore the other two entirely:
+${laneIsGiven ? "The applicable rule block:" : "All three rule blocks are below for reference — apply only the one matching the lane you infer, ignore the other two entirely:"}
 
-${EDUCATOR_GATES_AND_CHECKS}
-
-${BUSINESS_LANE_INSTRUCTIONS}
-
-${AGENCY_LANE_INSTRUCTIONS}
+${ruleBlocks}
 
 RULES FOR EVERY GATE/CHECK:
 - Every entry must include a real quote or specific location from the draft as evidence — no scores without receipts. If a gate/check genuinely has nothing to flag, evidence should say what you looked for and confirm it's present/absent (e.g. "Confession beat present in paragraph 2: '...'").
