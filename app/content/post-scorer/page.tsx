@@ -2,45 +2,58 @@
 
 import { useState } from "react";
 
-const GRADE_CONFIG = {
-  A: { bg: "bg-teal-tint", text: "text-primary", label: "Excellent" },
-  B: { bg: "bg-olive-tint", text: "text-olive", label: "Strong" },
-  C: { bg: "bg-gold-tint", text: "text-gold", label: "Decent" },
-  D: { bg: "bg-rust-tint", text: "text-accent", label: "Weak" },
-  F: { bg: "bg-red-50", text: "text-pin-red", label: "Needs Work" },
-} as const;
+type Lane = "educator" | "business" | "agency";
 
-const DIMENSION_LABELS: Record<string, string> = {
-  clarity: "Clarity",
-  hook: "Hook",
-  value: "Value",
-  authenticity: "Authenticity",
-  cta: "CTA",
-};
+const LANE_OPTIONS: { value: Lane | ""; label: string }[] = [
+  { value: "", label: "Auto-detect" },
+  { value: "educator", label: "Educator" },
+  { value: "business", label: "Business (Sam)" },
+  { value: "agency", label: "Agency (Dana)" },
+];
 
-const DIMENSION_ORDER = ["clarity", "hook", "value", "authenticity", "cta"];
-
-interface Dimension {
-  score: number;
-  note: string;
+interface HardGate {
+  name: string;
+  status: "PASS" | "FAIL";
+  evidence: string;
 }
 
-interface Rewrite {
-  original: string;
-  suggested: string;
-  reason: string;
+interface SoftCheck {
+  name: string;
+  status: "✓" | "~" | "✗";
+  evidence: string;
+}
+
+interface TopFix {
+  issue: string;
+  suggestion: string;
 }
 
 interface ScoreResult {
-  grade: "A" | "B" | "C" | "D" | "F";
-  overall_score: number;
-  dimensions: Record<string, Dimension>;
-  fixes: string[];
-  rewrites: Rewrite[];
+  lane: Lane;
+  laneInferred: boolean;
+  laneNote: string | null;
+  verdict: string;
+  gateFailureCount: number;
+  hardGates: HardGate[];
+  softChecks: SoftCheck[];
+  topFixes: TopFix[];
 }
+
+const LANE_LABELS: Record<Lane, string> = {
+  educator: "Educator",
+  business: "Business (Sam)",
+  agency: "Agency (Dana)",
+};
+
+const SOFT_CHECK_COLOR: Record<string, string> = {
+  "✓": "text-primary",
+  "~": "text-gold",
+  "✗": "text-pin-red",
+};
 
 export default function PostScorerPage() {
   const [content, setContent] = useState("");
+  const [lane, setLane] = useState<Lane | "">("");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<ScoreResult | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -58,7 +71,7 @@ export default function PostScorerPage() {
       const res = await fetch("/api/content/post-scorer", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content }),
+        body: JSON.stringify({ content, lane: lane || undefined }),
       });
       const data = await res.json();
       if (!data.success) throw new Error(data.error ?? "Scoring failed");
@@ -77,7 +90,7 @@ export default function PostScorerPage() {
       await fetch("/api/content/post-scorer", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content, save: true }),
+        body: JSON.stringify({ content, lane: lane || undefined, save: true }),
       });
       setSaved(true);
     } catch {
@@ -87,14 +100,14 @@ export default function PostScorerPage() {
     }
   }
 
-  const gradeConfig = result ? GRADE_CONFIG[result.grade] : null;
+  const isReady = result?.verdict === "READY TO PUBLISH";
 
   return (
     <div className="max-w-3xl mx-auto">
       <div className="mb-6">
         <h1 className="text-2xl font-serif text-dark mb-1">Post Scorer</h1>
         <p className="text-sm text-muted">
-          Paste any content — post, email, caption, newsletter. Get a scored analysis with specific fixes.
+          Paste a draft, pick a lane (or let it infer one), and get a hard-gate / soft-check read against your Voice DNA — not a generic rubric.
         </p>
       </div>
 
@@ -107,7 +120,20 @@ export default function PostScorerPage() {
           onChange={(e) => setContent(e.target.value)}
         />
         <div className="flex items-center justify-between pt-3 border-t border-border mt-3">
-          <span className="text-xs text-muted">{content.length.toLocaleString()} characters</span>
+          <div className="flex items-center gap-4">
+            <span className="text-xs text-muted">{content.length.toLocaleString()} characters</span>
+            <select
+              value={lane}
+              onChange={(e) => setLane(e.target.value as Lane | "")}
+              className="text-xs border border-border px-2 py-1 text-dark bg-white outline-none"
+            >
+              {LANE_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+          </div>
           <button
             onClick={handleScore}
             disabled={loading || !content.trim()}
@@ -130,107 +156,88 @@ export default function PostScorerPage() {
         </div>
       )}
 
-      {result && gradeConfig && (
+      {result && (
         <div className="flex flex-col gap-4">
 
-          {/* Grade badge */}
-          <div className="bg-white border border-border p-6 flex items-center gap-6">
-            <div className={`w-20 h-20 flex items-center justify-center ${gradeConfig.bg} shrink-0`}>
-              <span className={`text-5xl font-bold ${gradeConfig.text}`}>{result.grade}</span>
+          {/* Lane + verdict */}
+          <div className="bg-white border border-border p-6">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-semibold tracking-widest uppercase text-muted">
+                Lane: {LANE_LABELS[result.lane]}
+                {result.laneInferred && <span className="text-gold normal-case font-normal"> (inferred)</span>}
+              </span>
             </div>
-            <div>
-              <p className={`text-lg font-semibold ${gradeConfig.text}`}>{gradeConfig.label}</p>
-              <p className="text-sm text-muted mt-0.5">{result.overall_score} / 25 total score</p>
-              <div className="w-48 h-1.5 bg-border mt-3">
-                <div
-                  className="h-full bg-primary transition-all"
-                  style={{ width: `${(result.overall_score / 25) * 100}%` }}
-                />
-              </div>
+            {result.laneNote && (
+              <p className="text-xs text-muted italic mb-3">{result.laneNote}</p>
+            )}
+            <p className={`text-2xl font-bold ${isReady ? "text-primary" : "text-pin-red"}`}>
+              {result.verdict}
+            </p>
+          </div>
+
+          {/* Hard gates */}
+          <div className="bg-white border border-border p-5">
+            <p className="text-[10px] font-semibold tracking-widest uppercase text-muted mb-4">
+              Hard Gates
+            </p>
+            <div className="flex flex-col gap-3">
+              {result.hardGates.map((gate, i) => (
+                <div key={i} className="border-b border-border last:border-0 pb-3 last:pb-0">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-sm font-medium text-dark">{gate.name}</span>
+                    <span
+                      className={`text-xs font-bold px-2 py-0.5 ${
+                        gate.status === "PASS" ? "bg-teal-tint text-primary" : "bg-red-50 text-pin-red"
+                      }`}
+                    >
+                      {gate.status}
+                    </span>
+                  </div>
+                  <p className="text-xs text-muted leading-snug">{gate.evidence}</p>
+                </div>
+              ))}
             </div>
           </div>
 
-          {/* Dimension breakdown */}
+          {/* Soft checks */}
           <div className="bg-white border border-border p-5">
             <p className="text-[10px] font-semibold tracking-widest uppercase text-muted mb-4">
-              Dimension Breakdown
+              Soft Checks
             </p>
-            <div className="flex flex-col gap-4">
-              {DIMENSION_ORDER.map((key) => {
-                const dim = result.dimensions[key];
-                if (!dim) return null;
-                return (
-                  <div key={key}>
-                    <div className="flex items-center justify-between mb-1.5">
-                      <span className="text-sm font-medium text-dark">{DIMENSION_LABELS[key]}</span>
-                      <span className="text-sm font-mono text-muted">{dim.score} / 5</span>
-                    </div>
-                    <div className="w-full h-1.5 bg-border">
-                      <div
-                        className="h-full bg-primary"
-                        style={{ width: `${(dim.score / 5) * 100}%` }}
-                      />
-                    </div>
-                    <p className="text-xs text-muted mt-1.5 leading-snug">{dim.note}</p>
+            <div className="flex flex-col gap-3">
+              {result.softChecks.map((check, i) => (
+                <div key={i} className="border-b border-border last:border-0 pb-3 last:pb-0">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-sm font-medium text-dark">{check.name}</span>
+                    <span className={`text-sm font-bold ${SOFT_CHECK_COLOR[check.status] ?? "text-muted"}`}>
+                      {check.status}
+                    </span>
                   </div>
-                );
-              })}
+                  <p className="text-xs text-muted leading-snug">{check.evidence}</p>
+                </div>
+              ))}
             </div>
           </div>
 
           {/* Top fixes */}
-          {result.fixes.length > 0 && (
+          {result.topFixes.length > 0 && (
             <div className="bg-white border border-border p-5">
               <p className="text-[10px] font-semibold tracking-widest uppercase text-muted mb-4">
-                Top Fixes
+                Top Three Fixes
               </p>
-              <ol className="flex flex-col gap-3">
-                {result.fixes.slice(0, 3).map((fix, i) => (
+              <ol className="flex flex-col gap-4">
+                {result.topFixes.slice(0, 3).map((fix, i) => (
                   <li key={i} className="flex gap-3 items-start">
                     <span className="text-xs font-bold text-primary shrink-0 w-5 h-5 bg-teal-tint flex items-center justify-center mt-0.5">
                       {i + 1}
                     </span>
-                    <p className="text-sm text-dark leading-snug">{fix}</p>
+                    <div>
+                      <p className="text-sm text-dark font-medium leading-snug">{fix.issue}</p>
+                      <p className="text-sm text-muted leading-snug mt-1">{fix.suggestion}</p>
+                    </div>
                   </li>
                 ))}
               </ol>
-            </div>
-          )}
-
-          {/* Rewrite suggestions */}
-          {result.rewrites.length > 0 && (
-            <div className="bg-white border border-border p-5">
-              <p className="text-[10px] font-semibold tracking-widest uppercase text-muted mb-4">
-                Rewrite Suggestions
-              </p>
-              <div className="flex flex-col gap-4">
-                {result.rewrites.map((rw, i) => (
-                  <div key={i} className="border border-border p-4">
-                    <div className="grid grid-cols-2 gap-4 mb-3">
-                      <div>
-                        <p className="text-[10px] uppercase tracking-widest text-muted font-semibold mb-1.5">
-                          Original
-                        </p>
-                        <p className="text-sm text-dark/60 italic leading-snug">
-                          &ldquo;{rw.original}&rdquo;
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-[10px] uppercase tracking-widest text-accent font-semibold mb-1.5">
-                          Suggested
-                        </p>
-                        <p className="text-sm text-dark leading-snug">
-                          &ldquo;{rw.suggested}&rdquo;
-                        </p>
-                      </div>
-                    </div>
-                    <p className="text-xs text-muted border-t border-border pt-2">
-                      <span className="font-medium text-dark">Why: </span>
-                      {rw.reason}
-                    </p>
-                  </div>
-                ))}
-              </div>
             </div>
           )}
 
